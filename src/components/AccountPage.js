@@ -1,108 +1,238 @@
-export default function AccountPage({ user, orders, accountTab, setAccountTab, setUser, setCart, setPage }) {
-  const userOrders = orders;
-  const statusLabel = { new: "Новый", cooking: "Готовится", done: "Выполнен" };
-  const statusClass = { new: "status-new", cooking: "status-cooking", done: "status-done" };
+import { useEffect, useMemo, useState } from "react";
+import { ORDER_STATUS_LABELS } from "../constants/data";
+import { formatDate, formatMoney } from "../utils/format";
+import ProductCard from "./ProductCard";
+
+function OrderThumb({ item }) {
+  return <img className="order-item-thumb" src={item.imageUrl} alt={item.name} />;
+}
+
+export default function AccountPage({
+  user,
+  orders,
+  favoriteProducts,
+  accountTab,
+  setAccountTab,
+  onLogout,
+  setPage,
+  toggleFavorite,
+  addToCart,
+  addedIds,
+  onSaveProfile,
+  loading,
+}) {
+  const [profile, setProfile] = useState({ name: "", phone: "" });
+
+  useEffect(() => {
+    setProfile({
+      name: user?.name || "",
+      phone: user?.phone || "",
+    });
+  }, [user]);
+
+  const counters = useMemo(
+    () => ({
+      orders: orders.length,
+      favorites: favoriteProducts.length,
+      amount: orders.reduce((sum, order) => sum + order.total, 0),
+    }),
+    [favoriteProducts, orders]
+  );
+
+  if (!user) {
+    return (
+      <div className="page page-narrow">
+        <div className="empty-state">
+          <div className="empty-state-icon">○</div>
+          <h3>Профиль доступен после входа</h3>
+          <p>Авторизуйтесь, чтобы увидеть избранное, заказы и персональные данные.</p>
+          <button className="btn-primary" onClick={() => setPage("auth")}>
+            Войти
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page">
-      <h1 className="page-title">Личный кабинет</h1>
+      <div className="account-overview">
+        <div className="account-hero-card">
+          <div className="account-avatar large">{user.name[0]}</div>
+          <div>
+            <span className="eyebrow">Личный кабинет</span>
+            <h1 className="page-title">{user.name}</h1>
+            <p className="page-subtitle">
+              Управляйте профилем, избранными десертами и заказами в одном месте.
+            </p>
+          </div>
+        </div>
+
+        <div className="overview-stats">
+          <div className="overview-card">
+            <strong>{counters.orders}</strong>
+            <span>Заказов</span>
+          </div>
+          <div className="overview-card">
+            <strong>{counters.favorites}</strong>
+            <span>В избранном</span>
+          </div>
+          <div className="overview-card">
+            <strong>{formatMoney(counters.amount)}</strong>
+            <span>Сумма заказов</span>
+          </div>
+        </div>
+      </div>
+
       <div className="account-layout">
-        <div className="account-sidebar">
-          <div className="account-avatar">{user.name[0]}</div>
-          <div className="account-name">{user.name}</div>
-          <div className="account-email">{user.email}</div>
+        <aside className="account-sidebar">
           <div className="sidebar-menu">
-            {[["orders", "📦 Мои заказы"], ["profile", "👤 Профиль"], ["favorites", "❤️ Избранное"]].map(([k, l]) => (
+            {[
+              ["orders", "Заказы"],
+              ["profile", "Профиль"],
+              ["favorites", "Избранное"],
+            ].map(([key, label]) => (
               <button
-                key={k}
-                className={`sidebar-item ${accountTab === k ? "active" : ""}`}
-                onClick={() => setAccountTab(k)}
+                key={key}
+                className={`sidebar-item ${accountTab === key ? "active" : ""}`}
+                onClick={() => setAccountTab(key)}
               >
-                {l}
+                {label}
               </button>
             ))}
           </div>
-          <button
-            className="logout-btn"
-            onClick={() => { setUser(null); setCart([]); setPage("home"); }}
-          >
-            Выйти из аккаунта
+          <button className="logout-btn" onClick={() => onLogout()}>
+            Выйти
           </button>
-        </div>
+        </aside>
 
-        <div>
+        <div className="account-main">
           {accountTab === "orders" && (
-            <div>
-              <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 22, color: "#3d2010", marginBottom: 20 }}>
-                История заказов
-              </h2>
-              {userOrders.length === 0 ? (
+            <section>
+              <div className="section-heading">
+                <h2>История заказов</h2>
+                <p>Здесь собраны все оформленные заказы и их текущие статусы.</p>
+              </div>
+              {loading ? (
+                <div className="empty-state small">
+                  <p>Загружаем историю заказов...</p>
+                </div>
+              ) : orders.length === 0 ? (
                 <div className="empty-state">
-                  <div className="empty-state-icon">📦</div>
-                  <h3>Заказов пока нет</h3>
-                  <p>Сделайте ваш первый заказ!</p>
-                  <button className="add-cart-btn" onClick={() => setPage("catalog")}>В каталог</button>
+                  <div className="empty-state-icon">○</div>
+                  <h3>Пока нет заказов</h3>
+                  <p>Когда оформите первый заказ, он появится здесь.</p>
+                  <button className="btn-primary" onClick={() => setPage("catalog")}>
+                    Перейти в каталог
+                  </button>
                 </div>
               ) : (
-                userOrders.map(order => (
-                  <div className="order-card" key={order.id}>
+                orders.map(order => (
+                  <article className="order-card" key={order.id}>
                     <div className="order-header">
                       <div>
-                        <div className="order-id">Заказ {order.id}</div>
-                        <div className="order-date">{order.date}</div>
+                        <div className="order-id">{order.number}</div>
+                        <div className="order-date">{formatDate(order.createdAt)}</div>
                       </div>
-                      <span className={`order-status ${statusClass[order.status]}`}>
-                        {statusLabel[order.status]}
+                      <span className={`order-status status-${order.status}`}>
+                        {ORDER_STATUS_LABELS[order.status] || order.status}
                       </span>
                     </div>
                     <div className="order-items-list">
-                      {order.items.map(i => (
-                        <div key={i.id}>{i.img} {i.name} × {i.qty}</div>
+                      {order.items.map(item => (
+                        <div className="order-item-row" key={item.id}>
+                          <OrderThumb item={item} />
+                          <div className="order-item-text">
+                            <strong>{item.name}</strong>
+                            <span>
+                              {item.qty} шт. • {formatMoney(item.price * item.qty)}
+                            </span>
+                          </div>
+                        </div>
                       ))}
                     </div>
                     <div className="order-total">
-                      Итого: {order.total.toLocaleString("ru")} ₽ ·{" "}
-                      {order.delivery === "delivery" ? "Доставка" : "Самовывоз"}
+                      Итого: {formatMoney(order.total)} •{" "}
+                      {order.deliveryMethod === "delivery" ? "Доставка" : "Самовывоз"}
                     </div>
-                  </div>
+                  </article>
                 ))
               )}
-            </div>
+            </section>
           )}
 
           {accountTab === "profile" && (
-            <div className="order-card">
-              <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 22, color: "#3d2010", marginBottom: 20 }}>
-                Мои данные
-              </h2>
-              <div className="form-group" style={{ marginBottom: 14 }}>
-                <label style={{ fontSize: 13, color: "#8a6a50", fontWeight: 500 }}>Имя</label>
-                <input
-                  readOnly
-                  value={user.name}
-                  style={{ border: "1px solid rgba(122,79,46,0.15)", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontFamily: "DM Sans, sans-serif", width: "100%", color: "#2d2217", background: "#faf7f2" }}
-                />
+            <section className="profile-card">
+              <div className="section-heading">
+                <h2>Профиль</h2>
+                <p>При необходимости обновите имя и телефон для следующих заказов.</p>
               </div>
+
               <div className="form-group">
-                <label style={{ fontSize: 13, color: "#8a6a50", fontWeight: 500 }}>Email</label>
-                <input
-                  readOnly
-                  value={user.email}
-                  style={{ border: "1px solid rgba(122,79,46,0.15)", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontFamily: "DM Sans, sans-serif", width: "100%", color: "#2d2217", background: "#faf7f2" }}
-                />
+                <label>Email</label>
+                <input value={user.email} readOnly />
               </div>
-              <div style={{ marginTop: 16, fontSize: 13, color: "#8a6a50" }}>
-                Зарегистрирован: {user.created}
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Имя</label>
+                  <input
+                    value={profile.name}
+                    onChange={event =>
+                      setProfile(current => ({ ...current, name: event.target.value }))
+                    }
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Телефон</label>
+                  <input
+                    value={profile.phone}
+                    onChange={event =>
+                      setProfile(current => ({ ...current, phone: event.target.value }))
+                    }
+                  />
+                </div>
               </div>
-            </div>
+              <div className="profile-actions">
+                <button className="btn-primary" onClick={() => onSaveProfile(profile)}>
+                  Сохранить изменения
+                </button>
+                <span className="profile-hint">
+                  Аккаунт создан {formatDate(user.date_joined)}
+                </span>
+              </div>
+            </section>
           )}
 
           {accountTab === "favorites" && (
-            <div className="empty-state">
-              <div className="empty-state-icon">❤️</div>
-              <h3>Избранное пока пусто</h3>
-              <p>Нажмите на ❤️ на карточке товара, чтобы сохранить</p>
-            </div>
+            <section>
+              <div className="section-heading">
+                <h2>Избранное</h2>
+                <p>Сохраняйте понравившиеся позиции и возвращайтесь к ним позже.</p>
+              </div>
+              {favoriteProducts.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon">○</div>
+                  <h3>Избранное пока пустое</h3>
+                  <p>Откройте каталог и отметьте товары сердцем.</p>
+                  <button className="btn-primary" onClick={() => setPage("catalog")}>
+                    Открыть каталог
+                  </button>
+                </div>
+              ) : (
+                <div className="products-grid">
+                  {favoriteProducts.map(product => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onAdd={addToCart}
+                      added={!!addedIds[product.id]}
+                      isFavorite
+                      onToggleFavorite={toggleFavorite}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
           )}
         </div>
       </div>
