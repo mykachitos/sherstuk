@@ -119,10 +119,11 @@ export default function CatalogPage({
           <span className="eyebrow">Каталог SweetHand</span>
           <h1 className="page-title">Весь ассортимент в одном месте</h1>
           <p className="page-subtitle">
-            Живой каталог с фотографиями, поиском, подборками месяца и гибкими
-            фильтрами. Все покупки и данные профиля сохраняются прямо в браузере.
+            Ищите десерты по названию, фильтруйте по цене и скидкам, сохраняйте
+            понравившиеся позиции и быстро оформляйте заказы.
           </p>
         </div>
+
         {!user ? (
           <div className="catalog-auth-note">
             <strong>Избранное и история заказов доступны после входа.</strong>
@@ -133,7 +134,7 @@ export default function CatalogPage({
         ) : (
           <div className="catalog-auth-note">
             <strong>Привет, {user.name.split(" ")[0]}.</strong>
-            <span>Сохраняйте десерты в избранное и оформляйте заказы без потери корзины.</span>
+            <span>Сохраняйте десерты в избранное и возвращайтесь к ним позже.</span>
           </div>
         )}
       </section>
@@ -219,14 +220,14 @@ export default function CatalogPage({
           >
             Товары месяца
           </button>
-          {user && (
+          {user ? (
             <button
               className={`toggle-chip ${favoritesOnly ? "active" : ""}`}
               onClick={() => setFavoritesOnly(value => !value)}
             >
               Только избранное
             </button>
-          )}
+          ) : null}
           <span className="catalog-meta">{filteredProducts.length} позиций</span>
         </div>
       </section>
@@ -248,7 +249,7 @@ export default function CatalogPage({
               key={product.id}
               product={product}
               onAdd={addToCart}
-              added={!!addedIds[product.id]}
+              added={Boolean(addedIds[product.id])}
               isFavorite={favoriteIds.has(product.id)}
               onToggleFavorite={toggleFavorite}
             />

@@ -20,11 +20,11 @@ export default function ProductCard({
           {isFavorite ? "♥" : "♡"}
         </button>
         <div className="product-flags">
-          {product.badgeLabel && <span className="product-flag">{product.badgeLabel}</span>}
-          {product.isMonthPick && <span className="product-flag warm">Товар месяца</span>}
-          {product.hasDiscount && (
+          {product.badgeLabel ? <span className="product-flag">{product.badgeLabel}</span> : null}
+          {product.isMonthPick ? <span className="product-flag warm">Товар месяца</span> : null}
+          {product.hasDiscount ? (
             <span className="product-flag accent">-{product.discountPercent}%</span>
-          )}
+          ) : null}
         </div>
       </div>
 

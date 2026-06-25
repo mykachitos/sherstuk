@@ -107,7 +107,7 @@ export default function AccountPage({
         </aside>
 
         <div className="account-main">
-          {accountTab === "orders" && (
+          {accountTab === "orders" ? (
             <section>
               <div className="section-heading">
                 <h2>История заказов</h2>
@@ -159,13 +159,13 @@ export default function AccountPage({
                 ))
               )}
             </section>
-          )}
+          ) : null}
 
-          {accountTab === "profile" && (
+          {accountTab === "profile" ? (
             <section className="profile-card">
               <div className="section-heading">
                 <h2>Профиль</h2>
-                <p>При необходимости обновите имя и телефон для следующих заказов.</p>
+                <p>Обновите имя и телефон для следующих заказов.</p>
               </div>
 
               <div className="form-group">
@@ -196,14 +196,12 @@ export default function AccountPage({
                 <button className="btn-primary" onClick={() => onSaveProfile(profile)}>
                   Сохранить изменения
                 </button>
-                <span className="profile-hint">
-                  Аккаунт создан {formatDate(user.date_joined)}
-                </span>
+                <span className="profile-hint">Аккаунт создан {formatDate(user.dateJoined)}</span>
               </div>
             </section>
-          )}
+          ) : null}
 
-          {accountTab === "favorites" && (
+          {accountTab === "favorites" ? (
             <section>
               <div className="section-heading">
                 <h2>Избранное</h2>
@@ -225,7 +223,7 @@ export default function AccountPage({
                       key={product.id}
                       product={product}
                       onAdd={addToCart}
-                      added={!!addedIds[product.id]}
+                      added={Boolean(addedIds[product.id])}
                       isFavorite
                       onToggleFavorite={toggleFavorite}
                     />
@@ -233,7 +231,7 @@ export default function AccountPage({
                 </div>
               )}
             </section>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

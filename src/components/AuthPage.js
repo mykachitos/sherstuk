@@ -1,6 +1,18 @@
 import { useState } from "react";
 import { loginUser, registerUser } from "../utils/api";
 
+const ACCOUNT_METRICS = [
+  ["15 мин", "среднее подтверждение заказа"],
+  ["24/7", "доступ к кабинету и избранному"],
+  ["1 клик", "повтор заказа из истории"],
+];
+
+const ACCOUNT_BENEFITS = [
+  "Сохраняйте понравившиеся десерты и возвращайтесь к ним позже.",
+  "Следите за заказами, адресом и контактами в одном месте.",
+  "Авторизуйтесь как администратор и управляйте витриной без лишних шагов.",
+];
+
 export default function AuthPage({ setUser, setToken, setPage, showToast }) {
   const [tab, setTab] = useState("login");
   const [name, setName] = useState("");
@@ -10,10 +22,13 @@ export default function AuthPage({ setUser, setToken, setPage, showToast }) {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const isLogin = tab === "login";
+
   const handleLogin = async event => {
     event.preventDefault();
     setErr("");
     setLoading(true);
+
     try {
       const data = await loginUser({ email, password: pass });
       setToken(data.token);
@@ -31,6 +46,7 @@ export default function AuthPage({ setUser, setToken, setPage, showToast }) {
     event.preventDefault();
     setErr("");
     setLoading(true);
+
     try {
       const data = await registerUser({
         name,
@@ -53,26 +69,62 @@ export default function AuthPage({ setUser, setToken, setPage, showToast }) {
     <div className="auth-shell">
       <div className="auth-panel auth-cover">
         <div className="auth-cover-content">
-          <span className="eyebrow">SweetHand</span>
-          <h1>Заказывайте десерты, сохраняйте избранное и управляйте покупками в одном кабинете.</h1>
-          <p>
-            После входа сайт запомнит ваш профиль, избранные позиции, историю заказов
-            и даст доступ к локальной админке, если вы авторизуетесь под демо-админом.
-          </p>
+          <div className="auth-cover-top">
+            <div className="auth-cover-badge">Личный кабинет SweetHand</div>
+            <div className="auth-cover-kpis">
+              {ACCOUNT_METRICS.map(([value, label]) => (
+                <div className="auth-cover-kpi" key={label}>
+                  <strong>{value}</strong>
+                  <span>{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="auth-cover-main">
+            <span className="eyebrow light">SweetHand</span>
+            <h1>Заказывайте десерты, сохраняйте избранное и управляйте покупками в одном кабинете.</h1>
+            <p>
+              После входа сайт запомнит ваш профиль, избранные позиции, историю заказов
+              и даст доступ к админ-панели, если вы авторизуетесь под аккаунтом администратора.
+            </p>
+
+            <div className="auth-cover-list">
+              {ACCOUNT_BENEFITS.map(item => (
+                <div className="auth-cover-item" key={item}>
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="auth-panel auth-form-panel">
         <div className="auth-card">
-          <div className="auth-logo">Sweet<span>Hand</span></div>
-          <div className="auth-subtitle">Кондитерская ручной работы</div>
-          <div className="auth-demo-note">
-            Демо-админ: <strong>admin@sweethand.local</strong> / <strong>admin123</strong>
+          <div className="auth-form-head">
+            <div>
+              <div className="auth-logo">
+                Sweet<span>Hand</span>
+              </div>
+              <div className="auth-subtitle">Кондитерская ручной работы</div>
+            </div>
+
+            <div className="auth-form-intro">
+              <span className="eyebrow">{isLogin ? "С возвращением" : "Быстрый старт"}</span>
+              <h2>{isLogin ? "Вход в кабинет" : "Создание аккаунта"}</h2>
+              <p>
+                {isLogin
+                  ? "Авторизуйтесь, чтобы увидеть историю заказов, избранное и личные данные."
+                  : "Заполните короткую форму и сразу получите доступ к каталогу, избранному и оформлению заказов."}
+              </p>
+            </div>
           </div>
 
           <div className="auth-tabs">
             <button
-              className={`auth-tab ${tab === "login" ? "active" : ""}`}
+              type="button"
+              className={`auth-tab ${isLogin ? "active" : ""}`}
               onClick={() => {
                 setTab("login");
                 setErr("");
@@ -81,7 +133,8 @@ export default function AuthPage({ setUser, setToken, setPage, showToast }) {
               Войти
             </button>
             <button
-              className={`auth-tab ${tab === "register" ? "active" : ""}`}
+              type="button"
+              className={`auth-tab ${!isLogin ? "active" : ""}`}
               onClick={() => {
                 setTab("register");
                 setErr("");
@@ -91,7 +144,7 @@ export default function AuthPage({ setUser, setToken, setPage, showToast }) {
             </button>
           </div>
 
-          {tab === "login" ? (
+          {isLogin ? (
             <form className="auth-form" onSubmit={handleLogin}>
               <div className="form-group">
                 <label>Email</label>
@@ -100,6 +153,7 @@ export default function AuthPage({ setUser, setToken, setPage, showToast }) {
                   value={email}
                   onChange={event => setEmail(event.target.value)}
                   placeholder="you@example.com"
+                  autoComplete="email"
                   required
                 />
               </div>
@@ -110,13 +164,19 @@ export default function AuthPage({ setUser, setToken, setPage, showToast }) {
                   value={pass}
                   onChange={event => setPass(event.target.value)}
                   placeholder="Минимум 6 символов"
+                  autoComplete="current-password"
                   required
                 />
               </div>
-              {err && <div className="auth-err">{err}</div>}
-              <button type="submit" className="auth-submit" disabled={loading}>
-                {loading ? "Проверяем..." : "Войти"}
-              </button>
+              {err ? <div className="auth-err">{err}</div> : null}
+              <div className="auth-submit-row">
+                <button type="submit" className="auth-submit" disabled={loading}>
+                  {loading ? "Проверяем..." : "Войти"}
+                </button>
+                <span className="auth-helper-note">
+                  После входа можно быстро повторять заказы и хранить избранные позиции.
+                </span>
+              </div>
             </form>
           ) : (
             <form className="auth-form" onSubmit={handleRegister}>
@@ -126,6 +186,7 @@ export default function AuthPage({ setUser, setToken, setPage, showToast }) {
                   value={name}
                   onChange={event => setName(event.target.value)}
                   placeholder="Как к вам обращаться"
+                  autoComplete="name"
                   required
                 />
               </div>
@@ -135,6 +196,7 @@ export default function AuthPage({ setUser, setToken, setPage, showToast }) {
                   value={phone}
                   onChange={event => setPhone(event.target.value)}
                   placeholder="+7 (___) ___-__-__"
+                  autoComplete="tel"
                 />
               </div>
               <div className="form-group">
@@ -144,6 +206,7 @@ export default function AuthPage({ setUser, setToken, setPage, showToast }) {
                   value={email}
                   onChange={event => setEmail(event.target.value)}
                   placeholder="you@example.com"
+                  autoComplete="email"
                   required
                 />
               </div>
@@ -154,15 +217,26 @@ export default function AuthPage({ setUser, setToken, setPage, showToast }) {
                   value={pass}
                   onChange={event => setPass(event.target.value)}
                   placeholder="Минимум 6 символов"
+                  autoComplete="new-password"
                   required
                 />
               </div>
-              {err && <div className="auth-err">{err}</div>}
-              <button type="submit" className="auth-submit" disabled={loading}>
-                {loading ? "Создаем..." : "Создать аккаунт"}
-              </button>
+              {err ? <div className="auth-err">{err}</div> : null}
+              <div className="auth-submit-row">
+                <button type="submit" className="auth-submit" disabled={loading}>
+                  {loading ? "Создаём..." : "Создать аккаунт"}
+                </button>
+                <span className="auth-helper-note">
+                  Регистрация занимает меньше минуты и сразу открывает доступ к кабинету.
+                </span>
+              </div>
             </form>
           )}
+
+          <div className="auth-demo-note">
+            <span>Для проверки админ-панели</span>
+            <strong>admin@gmail.com / admin123</strong>
+          </div>
         </div>
       </div>
     </div>

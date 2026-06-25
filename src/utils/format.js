@@ -6,6 +6,7 @@ export function formatDate(value) {
   if (!value) {
     return "—";
   }
+
   return new Date(value).toLocaleDateString("ru-RU", {
     day: "2-digit",
     month: "long",

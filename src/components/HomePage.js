@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { sendFeedback } from "../utils/api";
 import { formatMoney } from "../utils/format";
 import ProductCard from "./ProductCard";
@@ -7,7 +7,7 @@ function CategorySpotlight({ category, onOpenCatalog }) {
   return (
     <button className="category-spotlight" onClick={() => onOpenCatalog(category.slug)}>
       <span>{category.name}</span>
-      <strong>{category.product_count} позиций</strong>
+      <strong>{category.productCount} позиций</strong>
     </button>
   );
 }
@@ -39,19 +39,34 @@ export default function HomePage({
     consent: false,
   });
 
+  useEffect(() => {
+    setForm(current => ({
+      ...current,
+      name: user?.name || current.name,
+      email: user?.email || current.email,
+      phone: user?.phone || current.phone,
+    }));
+  }, [user]);
+
   const handleFeedbackSubmit = async event => {
     event.preventDefault();
     setSendingFeedback(true);
+
     try {
       await sendFeedback({
         name: form.name,
         email: form.email,
         phone: form.phone,
         message: form.message,
-        personal_data_consent: form.consent,
+        personalDataConsent: form.consent,
       });
       setFeedbackSent(true);
-      showToast("Сообщение отправлено. Мы свяжемся с вами в ближайшее время.", "success");
+      setForm(current => ({
+        ...current,
+        message: "",
+        consent: false,
+      }));
+      showToast("Сообщение отправлено. Мы скоро свяжемся с вами.", "success");
     } catch (error) {
       showToast(error.message || "Не удалось отправить сообщение.");
     } finally {
@@ -67,8 +82,9 @@ export default function HomePage({
             <span className="eyebrow">Новая коллекция SweetHand</span>
             <h1>Авторские десерты для подарков, семейных ужинов и красивых событий.</h1>
             <p>
-              Большой каталог тортов, пирожных, печенья и шоколадных наборов. Мы
-              обновили сайт, добавили избранное, реальные скидки и подборки месяца.
+              Большой каталог тортов, пирожных, печенья и шоколадных наборов.
+              Теперь на сайте есть вход в аккаунт, реальные заказы, избранное и
+              форма обратной связи для индивидуальных запросов.
             </p>
             <div className="hero-btns">
               <button className="btn-primary" onClick={() => onOpenCatalog("all")}>
@@ -134,7 +150,7 @@ export default function HomePage({
           </div>
         </section>
 
-        {secondaryMonthProducts.length > 0 && (
+        {secondaryMonthProducts.length > 0 ? (
           <section className="homepage-section">
             <div className="section-heading">
               <h2>Подборка месяца</h2>
@@ -158,7 +174,7 @@ export default function HomePage({
               ))}
             </div>
           </section>
-        )}
+        ) : null}
 
         <section className="homepage-section">
           <div className="section-heading">
@@ -171,7 +187,7 @@ export default function HomePage({
                 key={product.id}
                 product={product}
                 onAdd={addToCart}
-                added={!!addedIds[product.id]}
+                added={Boolean(addedIds[product.id])}
                 isFavorite={favoriteIds.has(product.id)}
                 onToggleFavorite={toggleFavorite}
               />
@@ -190,7 +206,7 @@ export default function HomePage({
                 key={product.id}
                 product={product}
                 onAdd={addToCart}
-                added={!!addedIds[product.id]}
+                added={Boolean(addedIds[product.id])}
                 isFavorite={favoriteIds.has(product.id)}
                 onToggleFavorite={toggleFavorite}
               />
@@ -201,7 +217,7 @@ export default function HomePage({
         <section className="homepage-section feature-strip">
           {[
             ["Ручная работа", "Каждый десерт собирается вручную в мастерской."],
-            ["Готовые скидки", "Цены и акции подтягиваются прямо из каталога."],
+            ["Живой каталог", "Товары, скидки и заказы работают через реальный backend."],
             ["Избранное", "Сохраняйте понравившиеся позиции и возвращайтесь к ним позже."],
           ].map(([title, text]) => (
             <div className="feature-strip-card" key={title}>
@@ -215,10 +231,10 @@ export default function HomePage({
           <div className="feedback-header">
             <div>
               <span className="eyebrow">Обратная связь</span>
-              <h2>Заказать индивидуальный десерт</h2>
+              <h2>Хотите что-то уточнить? Напишите нам</h2>
               <p>
-                Напишите нам, если нужен торт с персональным оформлением, набор в
-                подарок или расчет заказа на событие.
+                Оставьте сообщение, если нужен торт с индивидуальным оформлением,
+                набор в подарок, расчёт на мероприятие или просто консультация по заказу.
               </p>
             </div>
             <div className="feedback-contacts">
@@ -235,7 +251,7 @@ export default function HomePage({
 
           {feedbackSent ? (
             <div className="feedback-success">
-              Мы получили сообщение. Менеджер свяжется с вами и уточнит детали заказа.
+              Мы получили сообщение. Менеджер свяжется с вами и уточнит детали.
             </div>
           ) : (
             <form className="feedback-form" onSubmit={handleFeedbackSubmit}>
@@ -260,7 +276,7 @@ export default function HomePage({
                 onChange={event => setForm(current => ({ ...current, phone: event.target.value }))}
               />
               <textarea
-                placeholder="Расскажите, что хотите заказать"
+                placeholder="Расскажите, что хотите уточнить или заказать"
                 value={form.message}
                 onChange={event => setForm(current => ({ ...current, message: event.target.value }))}
                 required

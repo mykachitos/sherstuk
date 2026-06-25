@@ -136,7 +136,7 @@ export default function AdminPage({
     return (
       <div className="page page-narrow">
         <div className="empty-state small">
-          <p>Загружаем локальную админку...</p>
+          <p>Загружаем админ-панель...</p>
         </div>
       </div>
     );
@@ -147,7 +147,9 @@ export default function AdminPage({
     setBusyKey("product-save");
     try {
       const saved = await onSaveProduct(productForm);
-      setSelectedProductId(saved.id);
+      if (saved?.id) {
+        setSelectedProductId(saved.id);
+      }
     } finally {
       setBusyKey("");
     }
@@ -202,11 +204,11 @@ export default function AdminPage({
     <div className="page">
       <section className="admin-hero">
         <div>
-          <span className="eyebrow">Локальная админка</span>
+          <span className="eyebrow">Панель администратора</span>
           <h1 className="page-title">Управление витриной SweetHand</h1>
           <p className="page-subtitle">
-            Меняйте ассортимент, редактируйте пользователей, отслеживайте заказы и
-            просматривайте заявки прямо в браузере без backend.
+            Меняйте ассортимент, редактируйте пользователей, отслеживайте заказы
+            и просматривайте сообщения клиентов в одном месте.
           </p>
           <div className="hero-btns">
             <button className="btn-primary" onClick={onRefresh} disabled={loading}>
@@ -241,7 +243,7 @@ export default function AdminPage({
         ))}
       </div>
 
-      {tab === "products" && (
+      {tab === "products" ? (
         <div className="admin-layout">
           <aside className="admin-list-panel">
             <div className="admin-list-head">
@@ -271,7 +273,7 @@ export default function AdminPage({
                   <div>
                     <strong>{product.name}</strong>
                     <span>
-                      {product.category?.name} · {formatMoney(product.price)}
+                      {product.category?.name} • {formatMoney(product.price)}
                     </span>
                   </div>
                 </button>
@@ -283,7 +285,7 @@ export default function AdminPage({
             <div className="section-heading">
               <div>
                 <h2>{productForm.id ? "Редактирование товара" : "Новый товар"}</h2>
-                <p>Карточка сразу обновит каталог и домашние подборки.</p>
+                <p>Карточка сразу обновит каталог и главную страницу.</p>
               </div>
             </div>
 
@@ -336,10 +338,7 @@ export default function AdminPage({
                     min="0"
                     value={productForm.originalPrice}
                     onChange={event =>
-                      setProductForm(current => ({
-                        ...current,
-                        originalPrice: event.target.value,
-                      }))
+                      setProductForm(current => ({ ...current, originalPrice: event.target.value }))
                     }
                   />
                 </div>
@@ -425,10 +424,7 @@ export default function AdminPage({
                   type="checkbox"
                   checked={productForm.isMonthPick}
                   onChange={event =>
-                    setProductForm(current => ({
-                      ...current,
-                      isMonthPick: event.target.checked,
-                    }))
+                    setProductForm(current => ({ ...current, isMonthPick: event.target.checked }))
                   }
                 />
                 <span>Показывать в подборке товара месяца</span>
@@ -438,16 +434,20 @@ export default function AdminPage({
                 <button className="btn-primary" type="submit" disabled={busyKey === "product-save"}>
                   {busyKey === "product-save" ? "Сохраняем..." : "Сохранить товар"}
                 </button>
-                <button className="btn-secondary admin-secondary-btn" type="button" onClick={handleProductDelete}>
+                <button
+                  className="btn-secondary admin-secondary-btn"
+                  type="button"
+                  onClick={handleProductDelete}
+                >
                   {productForm.id ? "Удалить товар" : "Очистить форму"}
                 </button>
               </div>
             </form>
           </section>
         </div>
-      )}
+      ) : null}
 
-      {tab === "users" && (
+      {tab === "users" ? (
         <div className="admin-layout">
           <aside className="admin-list-panel">
             <div className="admin-list-head">
@@ -467,7 +467,7 @@ export default function AdminPage({
                   <div>
                     <strong>{item.name}</strong>
                     <span>
-                      {item.isAdmin ? "Администратор" : "Клиент"} · {item.ordersCount} заказов
+                      {item.isAdmin ? "Администратор" : "Клиент"} • {item.ordersCount} заказов
                     </span>
                   </div>
                 </button>
@@ -479,7 +479,7 @@ export default function AdminPage({
             <div className="section-heading">
               <div>
                 <h2>Карточка пользователя</h2>
-                <p>Здесь можно обновить профиль, роль и быстро удалить аккаунт.</p>
+                <p>Здесь можно обновить профиль, роль и при необходимости удалить аккаунт.</p>
               </div>
             </div>
 
@@ -547,9 +547,9 @@ export default function AdminPage({
             </form>
           </section>
         </div>
-      )}
+      ) : null}
 
-      {tab === "orders" && (
+      {tab === "orders" ? (
         <section className="admin-section-card">
           <div className="section-heading">
             <div>
@@ -565,15 +565,13 @@ export default function AdminPage({
                   <div>
                     <div className="order-id">{order.number}</div>
                     <div className="order-date">
-                      {order.userName} · {formatDate(order.createdAt)}
+                      {order.userName} • {formatDate(order.createdAt)}
                     </div>
                   </div>
                   <select
                     className="admin-status-select"
                     value={order.status}
-                    onChange={event =>
-                      onUpdateOrderStatus(order.userId, order.id, event.target.value)
-                    }
+                    onChange={event => onUpdateOrderStatus(order.userId, order.id, event.target.value)}
                   >
                     {Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => (
                       <option key={value} value={value}>
@@ -583,7 +581,8 @@ export default function AdminPage({
                   </select>
                 </div>
                 <div className="order-total">
-                  {formatMoney(order.total)} · {order.deliveryMethod === "delivery" ? "Доставка" : "Самовывоз"}
+                  {formatMoney(order.total)} •{" "}
+                  {order.deliveryMethod === "delivery" ? "Доставка" : "Самовывоз"}
                 </div>
                 <div className="admin-order-meta">
                   <span>{order.phone}</span>
@@ -594,14 +593,14 @@ export default function AdminPage({
             ))}
           </div>
         </section>
-      )}
+      ) : null}
 
-      {tab === "feedback" && (
+      {tab === "feedback" ? (
         <section className="admin-section-card">
           <div className="section-heading">
             <div>
               <h2>Сообщения с сайта</h2>
-              <p>Все заявки из формы обратной связи хранятся локально и доступны здесь.</p>
+              <p>Здесь собраны все обращения из формы обратной связи.</p>
             </div>
           </div>
 
@@ -611,15 +610,15 @@ export default function AdminPage({
                 <strong>{item.name}</strong>
                 <span>
                   {item.email}
-                  {item.phone ? ` · ${item.phone}` : ""}
+                  {item.phone ? ` • ${item.phone}` : ""}
                 </span>
                 <p>{item.message}</p>
-                <time>{formatDate(item.created_at)}</time>
+                <time>{formatDate(item.createdAt)}</time>
               </article>
             ))}
           </div>
         </section>
-      )}
+      ) : null}
     </div>
   );
 }

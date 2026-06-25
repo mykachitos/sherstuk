@@ -39,18 +39,27 @@ export default function CartPage({
   const totalWithDelivery = cartTotal + deliveryPrice;
   const savings = Math.max(0, cartOriginalTotal - cartTotal);
 
-  const canSubmit = useMemo(
-    () => form.name && form.phone && form.consent && !submitting,
-    [form, submitting]
-  );
+  const canSubmit = useMemo(() => {
+    if (submitting || !form.name || !form.phone || !form.consent) {
+      return false;
+    }
+
+    if (form.deliveryMethod === "delivery" && !form.address.trim()) {
+      return false;
+    }
+
+    return true;
+  }, [form, submitting]);
 
   const handleSubmit = async event => {
     event.preventDefault();
     setSubmitting(true);
+
     const result = await onSubmitOrder(form);
     if (result.ok) {
       setShowForm(false);
     }
+
     setSubmitting(false);
   };
 
@@ -61,8 +70,8 @@ export default function CartPage({
           <div className="success-pill">Заказ принят</div>
           <h1>Спасибо за заказ</h1>
           <p>
-            Номер заказа: <strong>{orderSuccess.number}</strong>. Мы свяжемся с вами для
-            подтверждения состава, времени и доставки.
+            Номер заказа: <strong>{orderSuccess.number}</strong>. Мы свяжемся с вами
+            для подтверждения состава, времени и доставки.
           </p>
           <div className="hero-btns">
             <button
@@ -95,7 +104,7 @@ export default function CartPage({
         <div className="empty-state">
           <div className="empty-state-icon">○</div>
           <h3>Корзина пока пустая</h3>
-          <p>Добавьте десерты из каталога, и мы соберем для вас заказ.</p>
+          <p>Добавьте десерты из каталога, и мы соберём для вас заказ.</p>
           <button className="btn-primary" onClick={() => setPage("catalog")}>
             Перейти в каталог
           </button>
@@ -111,21 +120,19 @@ export default function CartPage({
           <span className="eyebrow">Корзина</span>
           <h1 className="page-title">Ваш заказ</h1>
           <p className="page-subtitle">
-            Проверьте состав корзины, а затем перейдите к оформлению и отправке
-            заказа в мастерскую.
+            Проверьте состав корзины, а затем перейдите к оформлению и отправке заказа.
           </p>
         </div>
       </div>
 
-      {!user && (
+      {!user ? (
         <div className="inline-alert">
-          Чтобы завершить оформление, понадобится вход в аккаунт. Корзину можно
-          собрать заранее.
+          Чтобы завершить оформление, понадобится вход в аккаунт. Корзину можно собрать заранее.
           <button className="inline-link" onClick={() => setPage("auth")}>
             Войти
           </button>
         </div>
-      )}
+      ) : null}
 
       <div className="cart-layout">
         <div className="cart-panel">
@@ -140,7 +147,7 @@ export default function CartPage({
                 </div>
                 <div className="qty-ctrl">
                   <button className="qty-btn" onClick={() => updateQty(item.id, -1)}>
-                    −
+                    -
                   </button>
                   <span className="qty-num">{item.qty}</span>
                   <button className="qty-btn" onClick={() => updateQty(item.id, 1)}>
@@ -152,7 +159,7 @@ export default function CartPage({
             ))}
           </div>
 
-          {showForm && (
+          {showForm ? (
             <form className="order-form" onSubmit={handleSubmit}>
               <div className="form-head">
                 <h3>Оформление заказа</h3>
@@ -183,25 +190,24 @@ export default function CartPage({
                 <label>Способ получения</label>
                 <select
                   value={form.deliveryMethod}
-                  onChange={event =>
-                    setForm({ ...form, deliveryMethod: event.target.value })
-                  }
+                  onChange={event => setForm({ ...form, deliveryMethod: event.target.value })}
                 >
                   <option value="pickup">Самовывоз</option>
                   <option value="delivery">Доставка по Владивостоку</option>
                 </select>
               </div>
 
-              {form.deliveryMethod === "delivery" && (
+              {form.deliveryMethod === "delivery" ? (
                 <div className="form-group">
                   <label>Адрес доставки</label>
                   <input
                     value={form.address}
                     onChange={event => setForm({ ...form, address: event.target.value })}
                     placeholder="Улица, дом, квартира"
+                    required
                   />
                 </div>
-              )}
+              ) : null}
 
               <div className="form-group">
                 <label>Комментарий</label>
@@ -223,10 +229,12 @@ export default function CartPage({
               </label>
 
               <button type="submit" className="checkout-btn" disabled={!canSubmit}>
-                {submitting ? "Отправляем..." : `Подтвердить заказ на ${formatMoney(totalWithDelivery)}`}
+                {submitting
+                  ? "Отправляем..."
+                  : `Подтвердить заказ на ${formatMoney(totalWithDelivery)}`}
               </button>
             </form>
-          )}
+          ) : null}
         </div>
 
         <aside className="cart-summary">
@@ -240,19 +248,21 @@ export default function CartPage({
             </div>
           ))}
 
-          {deliveryPrice > 0 && (
+          {deliveryPrice > 0 ? (
             <div className="summary-row">
               <span>Доставка</span>
               <span>{formatMoney(deliveryPrice)}</span>
             </div>
-          )}
+          ) : null}
 
           <div className="summary-row total">
             <span>Итого</span>
             <span>{formatMoney(totalWithDelivery)}</span>
           </div>
 
-          {savings > 0 && <div className="summary-note">Ваша экономия: {formatMoney(savings)}</div>}
+          {savings > 0 ? (
+            <div className="summary-note">Ваша экономия: {formatMoney(savings)}</div>
+          ) : null}
 
           <button className="checkout-btn" onClick={() => setShowForm(value => !value)}>
             {showForm ? "Скрыть форму" : "Перейти к оформлению"}
